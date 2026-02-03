@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Photo Editor - Like Anusar</title>
+    <style>
+        /* CSS: डिजाइन और स्टाइलिंग */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #e3f2fd;
+        }
+
+        .container {
+            width: 850px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            display: flex;
+            padding: 30px;
+            overflow: hidden;
+        }
+
+        /* सेटिंग्स पैनल (Left Side) */
+        .wrapper {
+            flex: 1;
+            padding-right: 25px;
+            border-right: 1px solid #ddd;
+        }
+
+        .editor-panel .title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        .options, .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        button {
+            outline: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            background: #fff;
+            border: 1px solid #aaa;
+            color: #444;
+            font-size: 14px;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            transition: 0.3s;
+        }
+
+        button.active, button:hover {
+            color: #fff;
+            background: #5372F0;
+            border-color: #5372F0;
+        }
+
+        .filter-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-top: 20px;
+            color: #444;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            margin-top: 10px;
+            accent-color: #5372F0;
+            cursor: pointer;
+        }
+
+        /* रोटेट और फ्लिप बटन */
+        .rotate .options {
+            margin-top: 15px;
+        }
+        
+        .rotate button {
+            width: calc(100% / 4 - 5px);
+            font-size: 18px;
+        }
+
+        /* इमेज प्रीव्यू एरिया (Right Side) */
+        .preview-img {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-left: 25px;
+            flex-direction: column;
+        }
+
+        .preview-img img {
+            max-width: 100%;
+            max-height: 350px;
+            object-fit: contain;
+        }
+
+        /* नीचे के बटन (Reset & Save) */
+        .controls {
+            margin-top: 25px;
+        }
+
+        .reset-filter {
+            background: #ff7474;
+            color: #fff;
+            border-color: #ff7474;
+        }
+
+        .choose-img {
+            background: #6c757d;
+            color: #fff;
+            border-color: #6c757d;
+        }
+
+        .save-img {
+            background: #5372F0;
+            color: #fff;
+            border-color: #5372F0;
+        }
+
+        @media (max-width: 760px) {
+            .container {
+                flex-direction: column;
+                padding: 20px;
+                width: 95%;
+            }
+            .wrapper {
+                border-right: none;
+                padding-right: 0;
+                margin-bottom: 20px;
+            }
+            .preview-img {
+                padding-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="wrapper">
+            <div class="editor-panel">
+                <div class="filter">
+                    <label class="title">Filters</label>
+                    <div class="options">
+                        <button id="brightness" class="active">Brightness</button>
+                        <button id="saturation">Saturation</button>
+                        <button id="inversion">Inversion</button>
+                        <button id="grayscale">Grayscale</button>
+                        <button id="contrast">Contrast</button>
+                        <button id="sepia">Sepia</button>
+                    </div>
+                    
+                    <div class="slider">
+                        <div class="filter-info">
+                            <p class="name">Brightness</p>
+                            <p class="value">100%</p>
+                        </div>
+                        <input type="range" value="100" min="0" max="200">
+                    </div>
+                </div>
+
+                <div class="rotate">
+                    <label class="title">Rotate & Flip</label>
+                    <div class="options">
+                        <button id="left">↺</button>
+                        <button id="right">↻</button>
+                        <button id="horizontal">⇄</button>
+                        <button id="vertical">⇅</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="reset-filter">Reset Filters</button>
+                <div class="row">
+                    <input type="file" class="file-input" accept="image/*" hidden>
+                    <button class="choose-img">Choose Image</button>
+                    <button class="save-img">Save Image</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-img">
+            <img src="https://via.placeholder.com/400x300?text=Upload+Image" alt="preview-img">
+        </div>
+    </div>
+
+    <script>
+        // JavaScript: लॉजिक और फंक्शनलिटी
+        const fileInput = document.querySelector(".file-input"),
+        filterOptions = document.querySelectorAll(".filter button"),
+        filterName = document.querySelector(".filter-info .name"),
+        filterValue = document.querySelector(".filter-info .value"),
+        filterSlider = document.querySelector(".slider input"),
+        rotateOptions = document.querySelectorAll(".rotate button"),
+        previewImg = document.querySelector(".preview-img img"),
+        resetFilterBtn = document.querySelector(".reset-filter"),
+        chooseImgBtn = document.querySelector(".choose-img"),
+        saveImgBtn = document.querySelector(".save-img");
+
+        let brightness = "100", saturation = "100", inversion = "0", grayscale = "0", contrast = "100", sepia = "0";
+        let rotate = 0, flipHorizontal = 1, flipVertical = 1;
+
+        const loadImage = () => {
+            let file = fileInput.files[0];
+            if(!file) return;
+            previewImg.src = URL.createObjectURL(file);
+            previewImg.addEventListener("load", () => {
+                document.querySelector(".container").classList.remove("disable");
+            });
+        }
+
+        const applyFilter = () => {
+            previewImg.style.transform = `rotate(${rotate}deg) scale(${flipHorizontal}, ${flipVertical})`;
+            previewImg.style.filter = `brightness(${brightness}%) saturate(${saturation}%) invert(${inversion}%) grayscale(${grayscale}%) contrast(${contrast}%) sepia(${sepia}%)`;
+        }
+
+        filterOptions.forEach(option => {
+            option.addEventListener("click", () => {
+                document.querySelector(".filter .active").classList.remove("active");
+                option.classList.add("active");
+                filterName.innerText = option.innerText;
+
+                if(option.id === "brightness") {
+                    filterSlider.max = "200";
+                    filterSlider.value = brightness;
+                    filterValue.innerText = `${brightness}%`;
+                } else if(option.id === "saturation") {
+                    filterSlider.max = "200";
+                    filterSlider.value = saturation;
+                    filterValue.innerText = `${saturation}%`;
+                } else if(option.id === "inversion") {
+                    filterSlider.max = "100";
+                    filterSlider.value = inversion;
+                    filterValue.innerText = `${inversion}%`;
+                } else if(option.id === "grayscale") {
+                    filterSlider.max = "100";
+                    filterSlider.value = grayscale;
+                    filterValue.innerText = `${grayscale}%`;
+                } else if(option.id === "contrast") {
+                    filterSlider.max = "200";
+                    filterSlider.value = contrast;
+                    filterValue.innerText = `${contrast}%`;
+                } else if(option.id === "sepia") {
+                    filterSlider.max = "100";
+                    filterSlider.value = sepia;
+                    filterValue.innerText = `${sepia}%`;
+                }
+            });
+        });
+
+        const updateFilter = () => {
+            filterValue.innerText = `${filterSlider.value}%`;
+            const selectedFilter = document.querySelector(".filter .active");
+
+            if(selectedFilter.id === "brightness") {
+                brightness = filterSlider.value;
+            } else if(selectedFilter.id === "saturation") {
+                saturation = filterSlider.value;
+            } else if(selectedFilter.id === "inversion") {
+                inversion = filterSlider.value;
+            } else if(selectedFilter.id === "grayscale") {
+                grayscale = filterSlider.value;
+            } else if(selectedFilter.id === "contrast") {
+                contrast = filterSlider.value;
+            } else if(selectedFilter.id === "sepia") {
+                sepia = filterSlider.value;
+            }
+            applyFilter();
+        }
+
+        rotateOptions.forEach(option => {
+            option.addEventListener("click", () => {
+                if(option.id === "left") {
+                    rotate -= 90;
+                } else if(option.id === "right") {
+                    rotate += 90;
+                } else if(option.id === "horizontal") {
+                    flipHorizontal = flipHorizontal === 1 ? -1 : 1;
+                } else {
+                    flipVertical = flipVertical === 1 ? -1 : 1;
+                }
+                applyFilter();
+            });
+        });
+
+        const resetFilter = () => {
+            brightness = "100"; saturation = "100"; inversion = "0"; grayscale = "0"; contrast="100"; sepia="0";
+            rotate = 0; flipHorizontal = 1; flipVertical = 1;
+            filterOptions[0].click();
+            applyFilter();
+        }
+
+        const saveImage = () => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = previewImg.naturalWidth;
+            canvas.height = previewImg.naturalHeight;
+            
+            ctx.filter = `brightness(${brightness}%) saturate(${saturation}%) invert(${inversion}%) grayscale(${grayscale}%) contrast(${contrast}%) sepia(${sepia}%)`;
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            if(rotate !== 0) {
+                ctx.rotate(rotate * Math.PI / 180);
+            }
+            ctx.scale(flipHorizontal, flipVertical);
+            ctx.drawImage(previewImg, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+            
+            const link = document.createElement("a");
+            link.download = "edited-image.jpg";
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        filterSlider.addEventListener("input", updateFilter);
+        resetFilterBtn.addEventListener("click", resetFilter);
+        saveImgBtn.addEventListener("click", saveImage);
+        fileInput.addEventListener("change", loadImage);
+        chooseImgBtn.addEventListener("click", () => fileInput.click());
+    </script>
+
+</body>
+</html>
